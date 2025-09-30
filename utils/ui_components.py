@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-def render_status_bar(value: str, labels: list = None, title: str = ""):
+def render_status_bar(value: str, labels: list | None = None, title: str = ""):
     """Render a horizontal status bar with low/normal/high segments."""
     
     if labels is None:
@@ -76,13 +76,13 @@ def render_flags(red_flags: list, green_flags: list):
                 )
 
 
-def render_metric_card(label: str, value: str, delta: str = None):
+def render_metric_card(label: str, value: str, delta: str | None = None):
     """Render a metric card."""
     
     st.metric(label=label, value=value, delta=delta)
 
 
-def render_property_header(facts, photo_url: str = None):
+def render_property_header(facts, photo_url: str | None = None):
     """Render property header with photo and key details."""
     
     col1, col2 = st.columns([1, 2])

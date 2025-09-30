@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import random
 
 
-def generate_mock_property_facts(address: str = None, flow: str = "buy") -> PropertyFacts:
+def generate_mock_property_facts(address: str | None = None, flow: str = "buy") -> PropertyFacts:
     """Generate mock property facts for testing."""
     
     base_price = random.randint(400000, 900000)

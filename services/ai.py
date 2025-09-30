@@ -38,8 +38,11 @@ Be professional but conversational. Respond in JSON format with a 'summary' fiel
             response_format={"type": "json_object"}
         )
         
-        result = json.loads(response.choices[0].message.content)
-        return result.get('summary', _heuristic_summary(flow, payload))
+        content = response.choices[0].message.content
+        if content:
+            result = json.loads(content)
+            return result.get('summary', _heuristic_summary(flow, payload))
+        return _heuristic_summary(flow, payload)
         
     except Exception as e:
         # Fallback to heuristic summary on any error
@@ -117,10 +120,13 @@ def _buy_heuristic(facts, stats, price_pos, demand_supply):
     trend = stats.get('price_trend_12m_pct', 0)
     trend_desc = "appreciating" if trend > 3 else "stable" if trend > -2 else "softening"
     
+    market_type = "competitive buyer's" if demand_supply == 'low' else 'balanced' if demand_supply == 'normal' else "seller's"
+    action_word = 'decisively' if demand_supply == 'high' else 'thoughtfully'
+    
     return f"This property is {price_desc} relative to comparable sales in the area. " \
            f"The market is currently {trend_desc} with a {trend:+.1f}% price change over the past year. " \
-           f"Local inventory levels suggest a {'competitive buyer's' if demand_supply == 'low' else 'balanced' if demand_supply == 'normal' else 'seller's'} market. " \
-           f"Act {'decisively' if demand_supply == 'high' else 'thoughtfully'} based on your timeline and budget constraints."
+           f"Local inventory levels suggest a {market_type} market. " \
+           f"Act {action_word} based on your timeline and budget constraints."
 
 
 def _sell_heuristic(facts, stats, price_pos, demand_supply):

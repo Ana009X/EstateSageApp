@@ -151,7 +151,7 @@ def render_evaluation_form(flow: str):
                     evaluate_property(flow, url, address)
 
 
-def evaluate_property(flow: str, url: str = None, address: str = None):
+def evaluate_property(flow: str, url: str | None = None, address: str | None = None):
     """Process property evaluation."""
     
     # Step 1: Get property facts
@@ -208,7 +208,7 @@ def evaluate_property(flow: str, url: str = None, address: str = None):
             
             # Calculate potential rental ROI
             if facts.rent_estimate or facts.sqft:
-                rent = facts.rent_estimate or facts.sqft * 2.0
+                rent = facts.rent_estimate or (facts.sqft * 2.0 if facts.sqft else 2500.0)
                 cap_rate = (rent * 12 - (facts.taxes_annual or 0)) / facts.list_price * 100
                 details['potential_cap_rate'] = cap_rate
     

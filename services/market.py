@@ -42,7 +42,7 @@ def get_comps(facts: PropertyFacts, radius_km: float = 1.5, lookback_days: int =
     return comps
 
 
-def fetch_area_stats(lat: float, lon: float, city: str = None) -> MarketStats:
+def fetch_area_stats(lat: float, lon: float, city: str | None = None) -> MarketStats:
     """
     Fetch market statistics for an area.
     

@@ -66,7 +66,7 @@ def parse_listing_url(url: str) -> PropertyFacts:
         images = []
         for img in soup.find_all('img'):
             src = img.get('src', '')
-            if any(keyword in src.lower() for keyword in ['property', 'listing', 'photo', 'image']):
+            if src and isinstance(src, str) and any(keyword in src.lower() for keyword in ['property', 'listing', 'photo', 'image']):
                 images.append(src)
         facts.photos = images[:5]  # Limit to 5 photos
         
