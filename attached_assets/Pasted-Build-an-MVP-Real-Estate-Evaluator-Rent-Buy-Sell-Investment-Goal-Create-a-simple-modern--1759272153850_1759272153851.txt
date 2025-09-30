@@ -1,0 +1,316 @@
+Build an MVP: Real Estate Evaluator (Rent • Buy • Sell • Investment)
+
+Goal: Create a simple, modern, full-stack web app that helps home buyers, sellers, and renters quickly evaluate a property. The app has four flows: Rent, Buy, Sell, and Investment. Each flow accepts either (a) a listing URL or (b) a manual address, then produces an AI-assisted evaluation with clear visuals (status bars, badges), concise insights, and basic financial metrics.
+
+Tech stack (preferred)
+
+Backend: Python FastAPI
+
+Frontend: HTML + Jinja templates + Tailwind CSS (via CDN) for a clean, modern look
+
+DB/Cache: In-memory or SQLite (for saved evaluations)
+
+Scraping/Parsing: requests, beautifulsoup4 (best-effort parsing when a URL is provided)
+
+Geocoding & comps (stubbed): create provider-agnostic functions with clear TODOs for real APIs (e.g., Zillow/Redfin/Realtor via approved providers or custom data); for now, simulate with sample data
+
+AI: add an ai_summarize() abstraction that can call an LLM (OpenAI API) if OPENAI_API_KEY is set; otherwise fall back to deterministic rules/heuristics
+
+Charts: Use lightweight HTML bars (no heavy chart libs). Bars: low / normal / high (or “underpriced / average / overpriced”)
+
+The app must run locally without API keys using mock/sample data. If environment variables exist, use them (e.g., OPENAI_API_KEY) to enrich results.
+
+App structure
+
+main.py (FastAPI app + routes)
+
+services/
+
+scrape.py (fetch & parse listing URL: title, price, beds, baths, sqft, photos, description)
+
+geocode.py (stub geocode + neighborhood lookup)
+
+market.py (comps, area stats, demand/supply, DOM, price history – mocked if no API)
+
+ai.py (LLM wrapper + fallback heuristics)
+
+metrics.py (rent estimates, NOI, cap rate, cash-on-cash, affordability, price bands)
+
+templates/
+
+base.html, home.html, rent.html, buy.html, sell.html, investment.html, result.html
+
+static/ (logo placeholder, minimal CSS overrides if needed)
+
+models.py (pydantic models)
+
+README.md (how to run + where to plug in real data providers)
+
+UX requirements
+
+Home page: 4 large cards: Rent, Buy, Sell, Investment. Minimal, modern.
+
+Each flow → Input step with:
+
+Field A: “Listing URL (optional)”
+
+Divider text “or”
+
+Field B: “Property address (street, city, state)”
+
+Next button
+
+Result page: show a clean summary header (photo, address, key facts), then a grid of evaluation widgets specific to the flow. Include:
+
+Horizontal status bar components with labels: Low • Normal • High (or Underpriced • Average • Overpriced). The filled segment should correspond to the computed bucket.
+
+Flag badges: red flags (2–4 max), green flags (2–4 max)
+
+Compact metric cards (DOM, demand vs supply, price history signal, etc.)
+
+All text short and scannable. Avoid walls of text; use bullet points.
+
+Mobile-first responsive.
+
+Data models (Pydantic)
+class PropertyInput(BaseModel):
+    url: Optional[HttpUrl] = None
+    address: Optional[str] = None
+    flow: Literal["rent", "buy", "sell", "investment"]
+
+class PropertyFacts(BaseModel):
+    address: str
+    lat: float | None = None
+    lon: float | None = None
+    beds: float | None = None
+    baths: float | None = None
+    sqft: int | None = None
+    year_built: int | None = None
+    lot_size_sqft: int | None = None
+    property_type: str | None = None
+    photos: list[str] = []
+    description: str | None = None
+    hoa_monthly: float | None = None
+    taxes_annual: float | None = None
+    list_price: float | None = None
+    rent_estimate: float | None = None
+    days_on_market: int | None = None
+    last_sold_price: float | None = None
+    last_sold_date: date | None = None
+
+class MarketStats(BaseModel):
+    neighborhood: str | None = None
+    city: str | None = None
+    median_list_price: float | None = None
+    median_sold_price: float | None = None
+    price_per_sqft_median: float | None = None
+    active_listings: int | None = None
+    sold_last_90d: int | None = None
+    dom_median: int | None = None
+    supply_to_demand_ratio: float | None = None  # >1 = more supply than demand
+    price_trend_12m_pct: float | None = None     # % change last 12 months
+    price_trend_5y_pct: float | None = None
+
+class Evaluation(BaseModel):
+    summary: str
+    bars: dict                        # {'price_position': 'low|normal|high', 'demand_vs_supply': 'low|normal|high', ...}
+    red_flags: list[str]
+    green_flags: list[str]
+    details: dict                     # flow-specific details/metrics
+
+Core logic (heuristics + AI summaries)
+
+Input handling
+
+If url provided → scrape.parse(url) to get property facts (gracefully degrade).
+
+If address provided → geocode.lookup(address) + market.fetch_area_stats(lat, lon).
+
+Merge scraped facts with market stats.
+
+Comps & price position
+
+market.get_comps(facts, radius_km=1.5, lookback_days=120) returns a list with price, price_per_sqft, status (active/sold), beds/baths/sqft.
+
+Compute percentile band of subject list price (or implied price for rent) vs neighborhood median:
+
+Bottom 25% → Low/Underpriced
+
+25–75% → Normal/Average
+
+Top 25% → High/Overpriced
+
+Demand vs supply
+
+Use active_listings, sold_last_90d, and dom_median.
+
+Define a simple index: dsi = active_listings / max(sold_last_90d,1);
+
+dsi < 3 → Tight demand (High)
+
+3–6 → Normal
+
+6 → Loose (Low)
+
+Condition estimation (photos + description)
+
+If AI available, summarize likely condition level (e.g., “updated kitchen, older roof”).
+
+Else, look for keywords in description (“updated”, “renovated”, “original”, “needs TLC”, etc.).
+
+Flags
+
+Red flags (2–4): pricing outlier, suspiciously low HOA, flood/earthquake zones (stub), high DOM, major repairs indicated.
+
+Green flags (2–4): recent upgrades, low DOM area, walkability/amenities, good school ratings (stub).
+
+Price trend
+
+From area stats, compute simple forward signal: if price_trend_12m_pct positive and dsi < 4, label growth tilt; else flat; else downside risk.
+
+Financials
+
+Rent flow: estimate fair rent band from comps; output “expected monthly rent” and status bar (low/normal/high vs area).
+
+Buy flow: show Underpriced/Average/Overpriced bar; include estimated monthly payment if list_price exists (use stub rates and standard formula: 20% down by default, 30-yr fixed; allow property tax + HOA if present). Include ROI if rented: cap rate from rent estimate.
+
+Sell flow: show recent sold comps (3–5), avg sold price (3–5 months), active count, suggested list price with seasonal adjustment (simplify: months Nov–Feb −1.5%, Mar–Jun +1.5%).
+
+Investment flow: compute NOI, Cap Rate, Cash-on-Cash:
+
+NOI = (Monthly Rent * 12) − (taxes + insurance + HOA*12 + maintenance(8% of rent) + vacancy(5%) + mgmt(8%))
+
+Cap Rate = NOI / PurchasePrice
+
+Cash-on-Cash = (NOI − Annual Debt Service) / Cash Invested
+
+Show ROI badge (e.g., 4.2% cap).
+
+AI summarization
+
+If OPENAI_API_KEY provided, pass consolidated facts & metrics to ai_summarize(flow, payload) to produce a 4–6 sentence, user-friendly summary. Otherwise, render template text using heuristics.
+
+Routes
+
+GET / → Home with 4 cards
+
+GET /evaluate/{flow} → form page (flow in rent|buy|sell|investment)
+
+POST /evaluate/{flow} → process, fetch data, compute metrics → redirect to result
+
+GET /result/{id} → render stored Evaluation + facts + stats
+
+UI specifics
+
+Use Tailwind. Large, clean header with property photo (or placeholder) and key stats (price, beds, baths, sqft, DOM, neighborhood).
+
+Status Bar Component (reusable):
+
+Labels below: Low | Normal | High (or Underpriced | Average | Overpriced)
+
+Filled portion and a pointer dot at the chosen bucket.
+
+Metric Chips: small rounded cards for DOM, D/S index, trend %, schools (stub), walk score (stub).
+
+Flags:
+
+Red flags → red pill badges with short text.
+
+Green flags → green pill badges.
+
+Keep copy tight: bullet points over paragraphs.
+
+Flow-specific output requirements
+Rent
+
+Inputs: listing URL or address → Next
+
+Output sections:
+
+Fair Rent Bar: Low / Normal / High vs area median ± IQR
+
+Demand vs Supply Bar
+
+Condition Summary (AI or keyword)
+
+Red Flags (2–4) and Green Flags (2–4)
+
+Price Trend Signal (growth / flat / risk)
+
+Notes on neighborhood (1–2 bullets; amenities if available)
+
+Sell
+
+Immediate Stats:
+
+Property info block (facts)
+
+Surrounding market snapshot (active listings, sold last 3–5 months, DOM median)
+
+Avg sold (3–5 mo) and Avg active
+
+Demand (DSI) and Condition
+
+Area rating (stub 1–5)
+
+Price trend (history & potential)
+
+Suggested List Price with seasonal factor and justification (1–2 bullets)
+
+Buy
+
+Price Position Bar: Underpriced / Average / Overpriced
+
+Market Context: DOM, comps count, demand/supply
+
+Condition + ROI if rented (cap rate rough)
+
+Estimated Monthly Payment (if list price present; assume 20% down, 30-yr fixed at a DEFAULT_RATE constant; include taxes/HOA if provided)
+
+Red Flags (2–4), Green Flags (2–4)
+
+Neighborhood price growth (1y + 5y) and “something interesting nearby” (stub: parks, transit, venue)
+
+Investment
+
+Show All investment metrics:
+
+Estimated rent (if not provided, infer from comps)
+
+Operating expenses breakdown (taxes, insurance, HOA, maintenance 8%, vacancy 5%, management 8%)
+
+NOI, Cap Rate, Cash-on-Cash (assume 25% down by default; allow changing via query param later)
+
+Net Monthly Profit
+
+End with Cap Rate / ROI badge and a short AI or heuristic summary.
+
+Privacy & compliance
+
+Do not use disallowed scraping; implement respectful fetching with user agent, timeout, and robots.txt awareness.
+
+Mark all third-party data as estimates.
+
+All models are for educational purposes; not financial advice.
+
+Acceptance criteria
+
+Runs with uvicorn main:app --reload on Replit.
+
+Works with zero API keys using mock data & deterministic logic.
+
+If OPENAI_API_KEY is present, summaries become more natural.
+
+Each flow renders: header, 2–3 status bars, metrics chips, 2–4 red flags, 2–4 green flags, and a concise summary.
+
+Clean Tailwind design, mobile-first.
+
+Code organized per the structure above, with clear TODOs where real providers can be integrated.
+
+Bonus (if time allows)
+
+Add a lightweight “Save PDF” (server-side HTML→PDF) button on result pages.
+
+Add a small “Adjust assumptions” drawer (interest rate, vacancy %, management %, maintenance %).
+
+Add a /demo route that uses a fixed mock listing to showcase all four flows.
