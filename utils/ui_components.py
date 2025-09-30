@@ -102,6 +102,22 @@ def render_property_header(facts, photo_url: str | None = None):
     with col2:
         st.markdown(f"### {facts.address}")
         
+        # Status badge
+        if facts.status:
+            status_colors = {
+                'active': '#10b981',
+                'sold': '#6b7280',
+                'off_market': '#f59e0b'
+            }
+            status_label = facts.status.replace('_', ' ').title()
+            color = status_colors.get(facts.status, '#6b7280')
+            st.markdown(
+                f'<span style="background-color: {color}; color: white; padding: 4px 12px; '
+                f'border-radius: 12px; font-size: 0.875rem; font-weight: 600;">{status_label}</span>',
+                unsafe_allow_html=True
+            )
+            st.markdown("<br>", unsafe_allow_html=True)
+        
         details = []
         if facts.beds:
             details.append(f"{facts.beds} bed")
@@ -109,11 +125,23 @@ def render_property_header(facts, photo_url: str | None = None):
             details.append(f"{facts.baths} bath")
         if facts.sqft:
             details.append(f"{facts.sqft:,} sqft")
-        if facts.list_price:
-            details.append(f"${facts.list_price:,.0f}")
         
         if details:
             st.markdown(" • ".join(details))
+        
+        # Price information
+        price_info = []
+        if facts.active_price:
+            price_info.append(f"**Active Price:** ${facts.active_price:,.0f}")
+        if facts.sold_price:
+            price_info.append(f"**Sold Price:** ${facts.sold_price:,.0f}")
+        if facts.last_listed_price and facts.last_listed_price != facts.active_price:
+            price_info.append(f"**Last Listed:** ${facts.last_listed_price:,.0f}")
+        if not price_info and facts.list_price:
+            price_info.append(f"**Price:** ${facts.list_price:,.0f}")
+        
+        if price_info:
+            st.markdown(" | ".join(price_info))
         
         if facts.days_on_market:
             st.caption(f"Days on Market: {facts.days_on_market}")

@@ -7,17 +7,21 @@ import random
 def get_comps(facts: PropertyFacts, radius_km: float = 1.5, lookback_days: int = 120) -> List[Dict]:
     """
     Get comparable properties.
-    
-    TODO: Integrate with MLS/Real Estate APIs:
-    - MLS data feeds (requires broker partnership)
-    - Zillow API for sold comps
-    - Redfin Data API
-    - Local tax assessor databases
+    First tries RentCast API, then falls back to mock data.
     
     Returns list of comparable properties with: price, price_per_sqft, status, beds, baths, sqft
     """
     
-    # Mock comparable properties
+    # Try RentCast first
+    try:
+        from services.rentcast import get_comparable_sales
+        comps = get_comparable_sales(facts.address)
+        if comps and len(comps) > 0:
+            return comps
+    except Exception as e:
+        print(f"RentCast comps error: {e}")
+    
+    # Fallback to mock comparable properties
     if not facts.list_price:
         base_price = 500000
     else:
@@ -45,16 +49,19 @@ def get_comps(facts: PropertyFacts, radius_km: float = 1.5, lookback_days: int =
 def fetch_area_stats(lat: float, lon: float, city: str | None = None) -> MarketStats:
     """
     Fetch market statistics for an area.
-    
-    TODO: Integrate with market data providers:
-    - Zillow Market Data API
-    - Redfin Market Metrics
-    - Realtor.com Market Trends
-    - Census Bureau data for demographics
-    - Local real estate boards
+    First tries RentCast API, then falls back to mock data.
     """
     
-    # Mock market statistics
+    # Try RentCast first
+    try:
+        from services.rentcast import get_market_stats_by_location
+        stats = get_market_stats_by_location(lat, lon, city)
+        if stats:
+            return stats
+    except Exception as e:
+        print(f"RentCast market stats error: {e}")
+    
+    # Fallback to mock market statistics
     median_price = random.randint(450000, 750000)
     
     return MarketStats(
