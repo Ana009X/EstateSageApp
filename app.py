@@ -121,6 +121,69 @@ def render_evaluation_form(flow: str):
     
     st.title(flow_titles[flow])
     
+    # Assumptions sidebar for Buy and Investment flows
+    assumptions = {}
+    if flow in ['buy', 'investment']:
+        with st.sidebar:
+            st.markdown("### 🎛️ Adjust Assumptions")
+            st.markdown("Customize financial parameters for your calculation")
+            
+            assumptions['interest_rate'] = st.slider(
+                "Interest Rate (%)",
+                min_value=3.0,
+                max_value=12.0,
+                value=7.0,
+                step=0.25,
+                help="Annual mortgage interest rate"
+            ) / 100
+            
+            assumptions['down_payment_pct'] = st.slider(
+                "Down Payment (%)",
+                min_value=0,
+                max_value=50,
+                value=20 if flow == 'buy' else 25,
+                step=5,
+                help="Percentage of purchase price as down payment"
+            ) / 100
+            
+            assumptions['loan_term_years'] = st.selectbox(
+                "Loan Term (years)",
+                options=[15, 20, 30],
+                index=2,
+                help="Mortgage loan term in years"
+            )
+            
+            if flow == 'investment':
+                st.markdown("---")
+                st.markdown("**Operating Expenses**")
+                
+                assumptions['vacancy_rate'] = st.slider(
+                    "Vacancy Rate (%)",
+                    min_value=0,
+                    max_value=20,
+                    value=5,
+                    step=1,
+                    help="Expected vacancy as % of annual rent"
+                ) / 100
+                
+                assumptions['management_fee'] = st.slider(
+                    "Property Management (%)",
+                    min_value=0,
+                    max_value=15,
+                    value=8,
+                    step=1,
+                    help="Management fee as % of annual rent"
+                ) / 100
+                
+                assumptions['maintenance_rate'] = st.slider(
+                    "Maintenance Reserve (%)",
+                    min_value=0,
+                    max_value=20,
+                    value=8,
+                    step=1,
+                    help="Maintenance budget as % of annual rent"
+                ) / 100
+    
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Input form
@@ -148,11 +211,14 @@ def render_evaluation_form(flow: str):
                 st.error("Please provide either a listing URL or property address")
             else:
                 with st.spinner("Analyzing property..."):
-                    evaluate_property(flow, url, address)
+                    evaluate_property(flow, url, address, assumptions)
 
 
-def evaluate_property(flow: str, url: str | None = None, address: str | None = None):
+def evaluate_property(flow: str, url: str | None = None, address: str | None = None, assumptions: dict = None):
     """Process property evaluation."""
+    
+    if assumptions is None:
+        assumptions = {}
     
     # Step 1: Get property facts
     if url:
@@ -200,11 +266,15 @@ def evaluate_property(flow: str, url: str | None = None, address: str | None = N
         if facts.list_price:
             payment_info = metrics.calculate_monthly_payment(
                 facts.list_price,
+                down_payment_pct=assumptions.get('down_payment_pct', 0.20),
+                interest_rate=assumptions.get('interest_rate', 0.07),
+                loan_term_years=assumptions.get('loan_term_years', 30),
                 taxes_annual=facts.taxes_annual or 0,
                 hoa_monthly=facts.hoa_monthly or 0
             )
             details['monthly_payment'] = payment_info
             details['condition'] = metrics.analyze_condition(facts)
+            details['assumptions'] = assumptions
             
             # Calculate potential rental ROI
             if facts.rent_estimate or facts.sqft:
@@ -225,13 +295,23 @@ def evaluate_property(flow: str, url: str | None = None, address: str | None = N
         rent = facts.rent_estimate or metrics.estimate_rent(facts, comps)
         price = facts.list_price or 500000
         
-        inv_metrics = metrics.calculate_investment_metrics(
-            purchase_price=price,
-            monthly_rent=rent,
-            taxes_annual=facts.taxes_annual or price * 0.012,
-            hoa_monthly=facts.hoa_monthly or 0
-        )
+        # Build investment metrics with custom assumptions
+        inv_kwargs = {
+            'purchase_price': price,
+            'monthly_rent': rent,
+            'taxes_annual': facts.taxes_annual or price * 0.012,
+            'hoa_monthly': facts.hoa_monthly or 0,
+            'down_payment_pct': assumptions.get('down_payment_pct', 0.25),
+            'interest_rate': assumptions.get('interest_rate', 0.07),
+            'loan_term_years': assumptions.get('loan_term_years', 30),
+            'vacancy_rate': assumptions.get('vacancy_rate', 0.05),
+            'management_fee': assumptions.get('management_fee', 0.08),
+            'maintenance_rate': assumptions.get('maintenance_rate', 0.08)
+        }
+        
+        inv_metrics = metrics.calculate_investment_metrics(**inv_kwargs)
         details['investment_metrics'] = inv_metrics
+        details['assumptions'] = assumptions
     
     # Step 7: Generate AI summary
     payload = {

@@ -85,7 +85,10 @@ def calculate_investment_metrics(
     hoa_monthly: float = 0,
     down_payment_pct: float = 0.25,
     interest_rate: float = DEFAULT_INTEREST_RATE,
-    loan_term_years: int = DEFAULT_LOAN_TERM_YEARS
+    loan_term_years: int = DEFAULT_LOAN_TERM_YEARS,
+    vacancy_rate: float = 0.05,
+    management_fee: float = 0.08,
+    maintenance_rate: float = 0.08
 ) -> Dict[str, Any]:
     """Calculate NOI, Cap Rate, Cash-on-Cash return for investment properties."""
     
@@ -94,9 +97,9 @@ def calculate_investment_metrics(
     
     # Operating expenses
     insurance_annual = purchase_price * 0.006  # 0.6% of property value
-    maintenance_annual = annual_rent * 0.08  # 8% of rent
-    vacancy_annual = annual_rent * 0.05  # 5% vacancy
-    management_annual = annual_rent * 0.08  # 8% property management
+    maintenance_annual = annual_rent * maintenance_rate
+    vacancy_annual = annual_rent * vacancy_rate
+    management_annual = annual_rent * management_fee
     taxes_annual = taxes_annual or purchase_price * 0.012  # 1.2% default
     hoa_annual = hoa_monthly * 12
     
