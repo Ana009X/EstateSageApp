@@ -117,7 +117,7 @@ def _rent_heuristic(facts, stats, price_pos, demand_supply):
 def _buy_heuristic(facts, stats, price_pos, demand_supply):
     price_desc = {"low": "underpriced", "normal": "market-rate", "high": "premium-priced"}[price_pos]
     
-    trend = stats.get('price_trend_12m_pct', 0)
+    trend = stats.get('price_trend_12m_pct', 0) or 0
     trend_desc = "appreciating" if trend > 3 else "stable" if trend > -2 else "softening"
     
     market_type = "competitive buyer's" if demand_supply == 'low' else 'balanced' if demand_supply == 'normal' else "seller's"

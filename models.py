@@ -28,6 +28,10 @@ class PropertyFacts(BaseModel):
     days_on_market: Optional[int] = None
     last_sold_price: Optional[float] = None
     last_sold_date: Optional[date] = None
+    status: Optional[str] = None
+    active_price: Optional[float] = None
+    sold_price: Optional[float] = None
+    last_listed_price: Optional[float] = None
 
 
 class MarketStats(BaseModel):
