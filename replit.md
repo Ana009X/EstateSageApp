@@ -4,6 +4,32 @@
 
 A Streamlit-based real estate evaluation platform that provides AI-powered insights for property analysis across four distinct workflows: Rent, Buy, Sell, and Investment. The application offers dual input methods (URL scraping or manual address entry) and generates comprehensive evaluations with financial metrics, market analysis, and visual insights to support real estate decision-making.
 
+## Recent Changes (September 30, 2025)
+
+### RentCast API Integration
+- Integrated RentCast API for real estate data (140M+ U.S. properties)
+- Property details: beds, baths, sqft, year built, lot size, HOA fees, taxes
+- Comparable sales analysis with real market data
+- Market statistics: median prices, active listings, days on market, price trends
+- Free tier: 50 API calls/month, graceful fallback to mock data when unavailable
+
+### Property Status Tracking
+- Added status field to PropertyFacts model: 'active', 'sold', 'off_market'
+- Multiple price points: active_price, sold_price, last_listed_price
+- Status badges in property header with color coding (green=active, gray=sold, amber=off_market)
+- Correct status mapping from RentCast API responses
+
+### OpenStreetMap Geocoding
+- Integrated Nominatim API for free address geocoding
+- Extracts lat/lon and neighborhood information
+- No API key required, respects usage policies with proper User-Agent
+
+### Error Handling & Logging
+- Replaced print statements with structured logging (Python logging module)
+- Module-level loggers for RentCast, geocoding, and market services
+- Detailed error context in warning messages for debugging
+- Silent fallbacks maintain user experience during API failures
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
