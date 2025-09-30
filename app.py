@@ -4,6 +4,8 @@ from services import scrape, geocode, market, ai, metrics
 from utils.ui_components import render_status_bar, render_flags, render_metric_card, render_property_header
 from utils.mock_data import generate_mock_property_facts, generate_flags
 from datetime import datetime
+import database
+import uuid
 
 
 # Page configuration
@@ -18,9 +20,19 @@ st.set_page_config(
 def main():
     """Main application entry point."""
     
+    # Initialize database
+    try:
+        database.init_database()
+    except Exception as e:
+        st.error(f"Database initialization error: {e}")
+    
     # Initialize session state
     if 'evaluation_data' not in st.session_state:
         st.session_state.evaluation_data = None
+    
+    # Generate session ID if not exists
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
     
     # Routing
     if 'current_page' not in st.session_state:
@@ -32,6 +44,10 @@ def main():
         render_evaluation_form(st.session_state.current_page)
     elif st.session_state.current_page == 'result':
         render_result()
+    elif st.session_state.current_page == 'history':
+        render_history()
+    elif st.session_state.current_page == 'compare':
+        render_compare()
 
 
 def render_home():
@@ -101,7 +117,14 @@ def render_home():
     
     # Footer
     st.markdown("<br><br>", unsafe_allow_html=True)
-    st.info("💡 **Tip:** This app works with or without API keys. For enhanced AI insights, set your OPENAI_API_KEY environment variable.")
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.info("💡 **Tip:** This app works with or without API keys. For enhanced AI insights, set your OPENAI_API_KEY environment variable.")
+    with col2:
+        if st.button("📚 View History", use_container_width=True):
+            st.session_state.current_page = 'history'
+            st.rerun()
 
 
 def render_evaluation_form(flow: str):
@@ -333,6 +356,20 @@ def evaluate_property(flow: str, url: str | None = None, address: str | None = N
         details=details
     )
     
+    # Step 9: Save to database
+    try:
+        eval_id = database.save_evaluation(
+            session_id=st.session_state.session_id,
+            flow=flow,
+            facts=facts.dict(),
+            stats=stats.dict(),
+            evaluation=evaluation.dict(),
+            assumptions=assumptions
+        )
+        st.session_state.last_saved_id = eval_id
+    except Exception as e:
+        st.warning(f"Could not save evaluation: {e}")
+    
     # Store in session state
     st.session_state.evaluation_data = {
         'flow': flow,
@@ -548,6 +585,158 @@ def render_investment_details(facts, stats, details):
             st.markdown(f"• HOA: ${expenses['hoa']:,.0f}")
         
         st.markdown(f"**Total Operating Expenses: ${expenses['total']:,.0f}/year**")
+
+
+def render_history():
+    """Render saved evaluations history."""
+    
+    if st.button("← Back to Home"):
+        st.session_state.current_page = 'home'
+        st.rerun()
+    
+    st.title("📚 Evaluation History")
+    st.markdown("Review your previously saved property evaluations")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    try:
+        evaluations = database.get_evaluations_by_session(st.session_state.session_id)
+        
+        if not evaluations:
+            st.info("No saved evaluations yet. Evaluate a property to start building your history!")
+            return
+        
+        # Display count and compare button
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown(f"**{len(evaluations)} saved evaluation{'s' if len(evaluations) != 1 else ''}**")
+        with col2:
+            if len(evaluations) >= 2 and st.button("📊 Compare Properties", use_container_width=True):
+                st.session_state.current_page = 'compare'
+                st.rerun()
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Display evaluations
+        for eval_data in evaluations:
+            flow_icons = {'rent': '🔑', 'buy': '🏡', 'sell': '💰', 'investment': '📈'}
+            icon = flow_icons.get(eval_data['flow'], '📄')
+            
+            with st.expander(f"{icon} {eval_data['address']} ({eval_data['flow'].title()}) - {eval_data['created_at'][:10]}"):
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    eval_dict = eval_data['evaluation_data']
+                    st.markdown(f"**Summary:** {eval_dict.get('summary', 'N/A')[:200]}...")
+                    
+                    if 'red_flags' in eval_dict and eval_dict['red_flags']:
+                        st.markdown(f"**Red Flags:** {', '.join(eval_dict['red_flags'][:2])}")
+                    
+                    if 'green_flags' in eval_dict and eval_dict['green_flags']:
+                        st.markdown(f"**Green Flags:** {', '.join(eval_dict['green_flags'][:2])}")
+                
+                with col2:
+                    if st.button("🗑️ Delete", key=f"del_{eval_data['id']}"):
+                        database.delete_evaluation(eval_data['id'], st.session_state.session_id)
+                        st.rerun()
+    
+    except Exception as e:
+        st.error(f"Error loading evaluations: {e}")
+
+
+def render_compare():
+    """Render side-by-side comparison of saved evaluations."""
+    
+    if st.button("← Back to History"):
+        st.session_state.current_page = 'history'
+        st.rerun()
+    
+    st.title("📊 Compare Properties")
+    
+    try:
+        evaluations = database.get_evaluations_by_session(st.session_state.session_id)
+        
+        if len(evaluations) < 2:
+            st.warning("You need at least 2 saved evaluations to compare. Evaluate more properties first!")
+            return
+        
+        # Selection dropdowns
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            options1 = [f"{e['address']} ({e['flow'].title()})" for e in evaluations]
+            selected1 = st.selectbox("Property 1", options1, key="prop1")
+            idx1 = options1.index(selected1) if selected1 else 0
+            eval1 = evaluations[idx1]
+        
+        with col2:
+            options2 = [f"{e['address']} ({e['flow'].title()})" for e in evaluations]
+            selected2 = st.selectbox("Property 2", options2, index=min(1, len(options2)-1), key="prop2")
+            idx2 = options2.index(selected2) if selected2 else 1
+            eval2 = evaluations[idx2]
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Comparison table
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown(f"### {eval1['address']}")
+            st.markdown(f"**Flow:** {eval1['flow'].title()}")
+            prop1 = eval1['property_data']
+            st.markdown(f"**Price:** ${prop1.get('list_price', 'N/A'):,.0f}" if prop1.get('list_price') else "**Price:** N/A")
+            st.markdown(f"**Beds/Baths:** {prop1.get('beds', 'N/A')}/{prop1.get('baths', 'N/A')}")
+            st.markdown(f"**Size:** {prop1.get('sqft', 'N/A'):,} sqft" if prop1.get('sqft') else "**Size:** N/A")
+        
+        with col2:
+            st.markdown(f"### {eval2['address']}")
+            st.markdown(f"**Flow:** {eval2['flow'].title()}")
+            prop2 = eval2['property_data']
+            st.markdown(f"**Price:** ${prop2.get('list_price', 'N/A'):,.0f}" if prop2.get('list_price') else "**Price:** N/A")
+            st.markdown(f"**Beds/Baths:** {prop2.get('beds', 'N/A')}/{prop2.get('baths', 'N/A')}")
+            st.markdown(f"**Size:** {prop2.get('sqft', 'N/A'):,} sqft" if prop2.get('sqft') else "**Size:** N/A")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Evaluation summaries
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Evaluation Summary:**")
+            st.info(eval1['evaluation_data'].get('summary', 'N/A'))
+        
+        with col2:
+            st.markdown("**Evaluation Summary:**")
+            st.info(eval2['evaluation_data'].get('summary', 'N/A'))
+        
+        # Flags comparison
+        st.markdown("<br>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            flags1 = eval1['evaluation_data']
+            if flags1.get('red_flags'):
+                st.markdown("**⚠️ Red Flags:**")
+                for flag in flags1['red_flags']:
+                    st.markdown(f"• {flag}")
+            if flags1.get('green_flags'):
+                st.markdown("**✅ Green Flags:**")
+                for flag in flags1['green_flags']:
+                    st.markdown(f"• {flag}")
+        
+        with col2:
+            flags2 = eval2['evaluation_data']
+            if flags2.get('red_flags'):
+                st.markdown("**⚠️ Red Flags:**")
+                for flag in flags2['red_flags']:
+                    st.markdown(f"• {flag}")
+            if flags2.get('green_flags'):
+                st.markdown("**✅ Green Flags:**")
+                for flag in flags2['green_flags']:
+                    st.markdown(f"• {flag}")
+    
+    except Exception as e:
+        st.error(f"Error loading comparison: {e}")
 
 
 if __name__ == "__main__":
