@@ -1,7 +1,10 @@
 from typing import Tuple, Optional
 from models import PropertyFacts
 import requests
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 def geocode_address(address: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
@@ -48,7 +51,7 @@ def geocode_address(address: str) -> Tuple[Optional[float], Optional[float], Opt
                 return (lat, lon, neighborhood)
     
     except Exception as e:
-        print(f"Geocoding error: {e}")
+        logger.warning(f"Geocoding error for address {address}: {e}")
     
     # Fallback: simple city/state extraction for mock neighborhood
     parts = address.split(',')
@@ -71,7 +74,7 @@ def lookup_property_facts(address: str) -> PropertyFacts:
         if facts:
             return facts
     except Exception as e:
-        print(f"RentCast lookup error: {e}")
+        logger.warning(f"RentCast lookup error for address {address}: {e}")
     
     # Fallback to basic geocoding
     lat, lon, neighborhood = geocode_address(address)

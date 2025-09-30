@@ -1,7 +1,10 @@
 from models import PropertyFacts, MarketStats
 from typing import List, Dict
 from datetime import datetime, timedelta
+import logging
 import random
+
+logger = logging.getLogger(__name__)
 
 
 def get_comps(facts: PropertyFacts, radius_km: float = 1.5, lookback_days: int = 120) -> List[Dict]:
@@ -19,7 +22,7 @@ def get_comps(facts: PropertyFacts, radius_km: float = 1.5, lookback_days: int =
         if comps and len(comps) > 0:
             return comps
     except Exception as e:
-        print(f"RentCast comps error: {e}")
+        logger.warning(f"RentCast comps error: {e}")
     
     # Fallback to mock comparable properties
     if not facts.list_price:
@@ -59,7 +62,7 @@ def fetch_area_stats(lat: float, lon: float, city: str | None = None) -> MarketS
         if stats:
             return stats
     except Exception as e:
-        print(f"RentCast market stats error: {e}")
+        logger.warning(f"RentCast market stats error: {e}")
     
     # Fallback to mock market statistics
     median_price = random.randint(450000, 750000)

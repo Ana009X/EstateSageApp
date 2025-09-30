@@ -1,8 +1,11 @@
 import os
 import requests
+import logging
 from typing import Optional, Dict, Any, List
 from models import PropertyFacts, MarketStats
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 RENTCAST_API_KEY = os.getenv('RENTCAST_API_KEY')
@@ -53,9 +56,18 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
                 pass
         
         # Determine status and prices
-        status = 'active' if prop.get('listingStatus') == 'Active' else 'off_market'
-        active_price = prop.get('price') if status == 'active' else None
+        listing_status = prop.get('listingStatus', '').lower()
         sold_price = prop.get('lastSalePrice')
+        
+        # Map RentCast status to our status
+        if listing_status in ['sold', 'closed'] or (sold_price and last_sold_date):
+            status = 'sold'
+        elif listing_status == 'active':
+            status = 'active'
+        else:
+            status = 'off_market'
+        
+        active_price = prop.get('price') if status == 'active' else None
         list_price = active_price or sold_price
         
         return PropertyFacts(
@@ -83,7 +95,7 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
         )
         
     except Exception as e:
-        print(f"RentCast API error: {e}")
+        logger.warning(f"RentCast API error for address {address}: {e}")
         return None
 
 
@@ -142,7 +154,7 @@ def get_market_stats_by_location(lat: float, lon: float, city: str = None) -> Op
         )
         
     except Exception as e:
-        print(f"RentCast market stats error: {e}")
+        logger.warning(f"RentCast market stats error for location ({lat}, {lon}): {e}")
         return None
 
 
@@ -184,6 +196,17 @@ def get_comparable_sales(address: str, limit: int = 10) -> Optional[List[Dict[st
             comp_price = comp.get('lastSalePrice') or comp.get('price', 0)
             comp_sqft = comp.get('squareFootage', 1)
             
+            # Determine status (consistent with get_property_by_address)
+            listing_status = comp.get('listingStatus', '').lower()
+            has_sale = comp.get('lastSalePrice') and comp.get('lastSaleDate')
+            
+            if listing_status in ['sold', 'closed'] or has_sale:
+                comp_status = 'sold'
+            elif listing_status == 'active':
+                comp_status = 'active'
+            else:
+                comp_status = 'off_market'
+            
             # Calculate days ago from sale date
             days_ago = 0
             if comp.get('lastSaleDate'):
@@ -196,7 +219,7 @@ def get_comparable_sales(address: str, limit: int = 10) -> Optional[List[Dict[st
             comps.append({
                 'price': comp_price,
                 'price_per_sqft': comp_price / comp_sqft if comp_sqft > 0 else 0,
-                'status': 'sold' if comp.get('lastSalePrice') else 'active',
+                'status': comp_status,
                 'beds': comp.get('bedrooms'),
                 'baths': comp.get('bathrooms'),
                 'sqft': comp_sqft,
@@ -207,5 +230,5 @@ def get_comparable_sales(address: str, limit: int = 10) -> Optional[List[Dict[st
         return comps
         
     except Exception as e:
-        print(f"RentCast comps error: {e}")
+        logger.warning(f"RentCast comparable sales error for address {address}: {e}")
         return None
