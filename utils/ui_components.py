@@ -82,6 +82,74 @@ def render_metric_card(label: str, value: str, delta: str | None = None):
     st.metric(label=label, value=value, delta=delta)
 
 
+def render_property_status_and_pricing(facts):
+    """Render prominent property status and pricing information."""
+    
+    st.markdown("### 🏷️ Property Status & Pricing")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Status**")
+        if facts.status:
+            status_colors = {
+                'active': '#10b981',
+                'sold': '#6b7280',
+                'off_market': '#f59e0b'
+            }
+            status_labels = {
+                'active': '🟢 Active',
+                'sold': '⚫ Sold',
+                'off_market': '🟠 Off Market'
+            }
+            status_label = status_labels.get(facts.status, facts.status.replace('_', ' ').title())
+            color = status_colors.get(facts.status, '#6b7280')
+            st.markdown(
+                f'<div style="background-color: {color}; color: white; padding: 12px 20px; '
+                f'border-radius: 8px; font-size: 1.1rem; font-weight: 600; text-align: center;">'
+                f'{status_label}</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                '<div style="background-color: #e5e7eb; color: #6b7280; padding: 12px 20px; '
+                'border-radius: 8px; font-size: 1.1rem; text-align: center;">Status Unknown</div>',
+                unsafe_allow_html=True
+            )
+    
+    with col2:
+        st.markdown("**Pricing Information**")
+        price_box_items = []
+        
+        if facts.active_price:
+            price_box_items.append(f"**Active Price:** ${facts.active_price:,.0f}")
+        
+        if facts.sold_price:
+            price_box_items.append(f"**Sold Price:** ${facts.sold_price:,.0f}")
+        
+        if facts.last_listed_price and facts.last_listed_price != facts.active_price:
+            price_box_items.append(f"**Last Listed:** ${facts.last_listed_price:,.0f}")
+        
+        if not price_box_items and facts.list_price:
+            price_box_items.append(f"**List Price:** ${facts.list_price:,.0f}")
+        
+        if price_box_items:
+            price_text = "<br>".join(price_box_items)
+            st.markdown(
+                f'<div style="background-color: #f3f4f6; padding: 12px 20px; border-radius: 8px;">'
+                f'{price_text}</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                '<div style="background-color: #f3f4f6; color: #6b7280; padding: 12px 20px; '
+                'border-radius: 8px;">Price information not available</div>',
+                unsafe_allow_html=True
+            )
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+
+
 def render_property_header(facts, photo_url: str | None = None):
     """Render property header with photo and key details."""
     

@@ -1,7 +1,7 @@
 import streamlit as st
 from models import PropertyInput, PropertyFacts, MarketStats, Evaluation
 from services import scrape, geocode, market, ai, metrics
-from utils.ui_components import render_status_bar, render_flags, render_metric_card, render_property_header
+from utils.ui_components import render_status_bar, render_flags, render_metric_card, render_property_header, render_property_status_and_pricing
 from utils.mock_data import generate_mock_property_facts, generate_flags
 from datetime import datetime
 import database
@@ -409,6 +409,9 @@ def render_result():
     render_property_header(facts, photo_url)
     
     st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Property Status & Pricing (for all flows)
+    render_property_status_and_pricing(facts)
     
     # AI Summary
     st.markdown("### 📊 Analysis Summary")

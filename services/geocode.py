@@ -64,7 +64,7 @@ def geocode_address(address: str) -> Tuple[Optional[float], Optional[float], Opt
 def lookup_property_facts(address: str) -> PropertyFacts:
     """
     Lookup property facts from address.
-    First tries RentCast API, then falls back to geocoding only.
+    First tries RentCast API, then falls back to mock data with geocoding.
     """
     
     # Try RentCast first
@@ -76,11 +76,15 @@ def lookup_property_facts(address: str) -> PropertyFacts:
     except Exception as e:
         logger.warning(f"RentCast lookup error for address {address}: {e}")
     
-    # Fallback to basic geocoding
+    # Fallback to mock data with real geocoding
+    from utils.mock_data import generate_mock_property_facts
     lat, lon, neighborhood = geocode_address(address)
     
-    return PropertyFacts(
-        address=address,
-        lat=lat,
-        lon=lon
-    )
+    # Generate mock data with the actual address
+    facts = generate_mock_property_facts(address=address)
+    
+    # Update with real geocoding coordinates
+    facts.lat = lat
+    facts.lon = lon
+    
+    return facts

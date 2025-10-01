@@ -8,6 +8,15 @@ def generate_mock_property_facts(address: str | None = None, flow: str = "buy") 
     
     base_price = random.randint(400000, 900000)
     
+    # Randomly assign status
+    status_options = ['active', 'sold', 'off_market']
+    status = random.choice(status_options)
+    
+    # Set prices based on status
+    active_price = base_price if status == 'active' else None
+    sold_price = int(base_price * random.uniform(0.92, 1.08)) if status == 'sold' else None
+    last_listed_price = int(base_price * random.uniform(0.95, 1.05)) if status != 'active' else None
+    
     return PropertyFacts(
         address=address or "123 Main Street, San Francisco, CA 94102",
         lat=37.7749 + random.uniform(-0.05, 0.05),
@@ -22,11 +31,15 @@ def generate_mock_property_facts(address: str | None = None, flow: str = "buy") 
         description="Charming property with updated kitchen and original hardwood floors. Great neighborhood with parks nearby.",
         hoa_monthly=random.choice([0, 200, 350, 500]),
         taxes_annual=base_price * 0.012,
-        list_price=base_price,
+        list_price=active_price or sold_price or base_price,
         rent_estimate=base_price * 0.009,
         days_on_market=random.randint(5, 60),
         last_sold_price=base_price * random.uniform(0.85, 0.95),
-        last_sold_date=datetime.now().date() - timedelta(days=random.randint(365, 1825))
+        last_sold_date=datetime.now().date() - timedelta(days=random.randint(365, 1825)),
+        status=status,
+        active_price=active_price,
+        sold_price=sold_price,
+        last_listed_price=last_listed_price
     )
 
 
