@@ -39,7 +39,9 @@ def generate_mock_property_facts(address: str | None = None, flow: str = "buy") 
         status=status,
         active_price=active_price,
         sold_price=sold_price,
-        last_listed_price=last_listed_price
+        last_listed_price=last_listed_price,
+        data_source='simulated',
+        data_updated=datetime.now().strftime('%Y-%m-%d %H:%M')
     )
 
 

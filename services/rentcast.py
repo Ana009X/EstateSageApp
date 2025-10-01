@@ -55,20 +55,35 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
             except:
                 pass
         
-        # Determine status and prices
+        # Determine status and prices - using latest RentCast data
         listing_status = prop.get('listingStatus', '').lower()
         sold_price = prop.get('lastSalePrice')
+        current_price = prop.get('price')  # Current listing price if active
         
-        # Map RentCast status to our status
-        if listing_status in ['sold', 'closed'] or (sold_price and last_sold_date):
+        # Enhanced status mapping for latest market data
+        # RentCast provides: Active, Pending, Sold, Contingent, Withdrawn, etc.
+        if listing_status in ['active', 'for sale', 'new']:
+            status = 'active'
+        elif listing_status in ['sold', 'closed']:
             status = 'sold'
-        elif listing_status == 'active':
+        elif listing_status in ['pending', 'contingent', 'under contract']:
+            status = 'pending'
+        elif listing_status in ['withdrawn', 'cancelled', 'expired']:
+            status = 'off_market'
+        elif sold_price and last_sold_date:
+            # Has recent sale data
+            status = 'sold'
+        elif current_price:
+            # Has current price but unclear status
             status = 'active'
         else:
             status = 'off_market'
         
-        active_price = prop.get('price') if status == 'active' else None
-        list_price = active_price or sold_price
+        active_price = current_price if status in ['active', 'pending'] else None
+        list_price = active_price or current_price or sold_price
+        
+        logger.info(f"RentCast data for {address}: status={status}, listing_status={listing_status}, "
+                   f"active_price={active_price}, sold_price={sold_price}")
         
         return PropertyFacts(
             address=prop.get('formattedAddress', address),
@@ -91,7 +106,9 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
             status=status,
             active_price=active_price,
             sold_price=sold_price,
-            last_listed_price=prop.get('lastListPrice')
+            last_listed_price=prop.get('lastListPrice'),
+            data_source='rentcast',
+            data_updated=datetime.now().strftime('%Y-%m-%d %H:%M')
         )
         
     except Exception as e:

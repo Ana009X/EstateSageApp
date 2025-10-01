@@ -94,11 +94,13 @@ def render_property_status_and_pricing(facts):
         if facts.status:
             status_colors = {
                 'active': '#10b981',
+                'pending': '#3b82f6',
                 'sold': '#6b7280',
                 'off_market': '#f59e0b'
             }
             status_labels = {
                 'active': '🟢 Active',
+                'pending': '🔵 Pending',
                 'sold': '⚫ Sold',
                 'off_market': '🟠 Off Market'
             }
@@ -110,6 +112,16 @@ def render_property_status_and_pricing(facts):
                 f'{status_label}</div>',
                 unsafe_allow_html=True
             )
+            
+            # Show data source and freshness
+            if facts.data_source or facts.data_updated:
+                source_info = []
+                if facts.data_source:
+                    source_label = 'RentCast' if facts.data_source == 'rentcast' else facts.data_source.title()
+                    source_info.append(f"Source: {source_label}")
+                if facts.data_updated:
+                    source_info.append(f"Updated: {facts.data_updated}")
+                st.caption(" | ".join(source_info))
         else:
             st.markdown(
                 '<div style="background-color: #e5e7eb; color: #6b7280; padding: 12px 20px; '

@@ -28,10 +28,12 @@ class PropertyFacts(BaseModel):
     days_on_market: Optional[int] = None
     last_sold_price: Optional[float] = None
     last_sold_date: Optional[date] = None
-    status: Optional[str] = None
+    status: Optional[str] = None  # active, sold, pending, off_market
     active_price: Optional[float] = None
     sold_price: Optional[float] = None
     last_listed_price: Optional[float] = None
+    data_source: Optional[str] = None  # rentcast, mock, etc.
+    data_updated: Optional[str] = None  # timestamp of data
 
 
 class MarketStats(BaseModel):
