@@ -465,22 +465,34 @@ def render_result():
     
     # Market context
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 🏘️ Market Context")
+    st.markdown("### 🏘️ Local Market Data")
+    
+    # Add market area description
+    market_area = stats.neighborhood or stats.city or "this area"
+    st.caption(f"📍 Market statistics for **{market_area}** (ZIP code area where property is located)")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        render_metric_card("Active Listings", f"{stats.active_listings or 'N/A'}")
+        st.markdown("**Active Listings**")
+        st.markdown(f"### {stats.active_listings or 'N/A'}")
+        st.caption("Currently for sale in this ZIP area")
     with col2:
-        render_metric_card("Sold (90d)", f"{stats.sold_last_90d or 'N/A'}")
+        st.markdown("**Sold (Last 90 Days)**")
+        st.markdown(f"### {stats.sold_last_90d or 'N/A'}")
+        st.caption("Recently sold properties nearby")
     with col3:
-        render_metric_card("Median DOM", f"{stats.dom_median or 'N/A'} days")
+        st.markdown("**Median Days on Market**")
+        st.markdown(f"### {stats.dom_median or 'N/A'} days")
+        st.caption("How long properties take to sell")
     with col4:
+        st.markdown("**12-Month Price Trend**")
         if stats.price_trend_12m_pct is not None:
             delta_str = f"{stats.price_trend_12m_pct:+.1f}%"
-            render_metric_card("1Y Price Trend", delta_str)
+            st.markdown(f"### {delta_str}")
         else:
-            render_metric_card("1Y Price Trend", "N/A")
+            st.markdown(f"### N/A")
+        st.caption("Price change over past year")
 
 
 def render_rent_details(facts, stats, details):
