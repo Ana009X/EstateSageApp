@@ -1,0 +1,54 @@
+
+🎛️ Adjust Assumptions
+Customize financial parameters for your calculation
+
+Interest Rate (%)
+
+3.00
+12.00
+Down Payment (%)
+
+0
+50
+Loan Term (years)
+
+File change.
+
+🏡 Buy Evaluation
+
+Property Information
+Listing URL (optional)
+
+https://www.zillow.com/homedetails/707-Webster-St-Palo-Alto-CA-94301/19495957_zpid/
+— or —
+
+Property Address
+
+123 Main St, San Francisco, CA 94102
+
+TypeError: unsupported format string passed to NoneType.__format__
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 128, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 669, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/app.py", line 743, in <module>
+    main()
+File "/home/runner/workspace/app.py", line 44, in main
+    render_evaluation_form(st.session_state.current_page)
+File "/home/runner/workspace/app.py", line 237, in render_evaluation_form
+    evaluate_property(flow, url, address, assumptions)
+File "/home/runner/workspace/app.py", line 348, in evaluate_property
+    summary = ai.ai_summarize(flow, payload)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/services/ai.py", line 49, in ai_summarize
+    return _heuristic_summary(flow, payload)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/services/ai.py", line 100, in _heuristic_summary
+    'investment': _investment_heuristic(facts, stats, payload.get('metrics', {}))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/services/ai.py", line 148, in _investment_heuristic
+    return f"This investment opportunity shows a {cap_quality} {cap_rate:.1f}% cap rate " \
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

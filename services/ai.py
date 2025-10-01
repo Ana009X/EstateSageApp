@@ -140,14 +140,16 @@ def _sell_heuristic(facts, stats, price_pos, demand_supply):
 
 
 def _investment_heuristic(facts, stats, metrics):
-    cap_rate = metrics.get('cap_rate', 0)
-    coc = metrics.get('cash_on_cash', 0)
+    cap_rate = metrics.get('cap_rate') or 0
+    coc = metrics.get('cash_on_cash') or 0
+    monthly_noi = metrics.get('monthly_noi') or 0
+    price_trend_5y = stats.get('price_trend_5y_pct') or 0
     
     cap_quality = "strong" if cap_rate > 7 else "moderate" if cap_rate > 5 else "modest"
     
     return f"This investment opportunity shows a {cap_quality} {cap_rate:.1f}% cap rate " \
            f"with a {coc:.1f}% cash-on-cash return. " \
-           f"Monthly NOI of ${metrics.get('monthly_noi', 0):,.0f} suggests " \
-           f"{'positive' if metrics.get('monthly_noi', 0) > 0 else 'challenging'} cash flow potential. " \
+           f"Monthly NOI of ${monthly_noi:,.0f} suggests " \
+           f"{'positive' if monthly_noi > 0 else 'challenging'} cash flow potential. " \
            f"Consider operating expense ratios and local vacancy trends when finalizing your analysis. " \
-           f"Long-term appreciation in this market has been {stats.get('price_trend_5y_pct', 0):.1f}% over 5 years."
+           f"Long-term appreciation in this market has been {price_trend_5y:.1f}% over 5 years."
