@@ -17,6 +17,89 @@ st.set_page_config(
 )
 
 
+# Global styles: modern dark theme, typography, and components
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+        --accent: #008080;
+        --bg: #0b0f14;
+        --bg-elev: #111827;
+        --border: #1f2937;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --radius: 16px;
+        --shadow: 0 12px 32px rgba(0,0,0,.35);
+    }
+
+    html, body, .stApp {
+        background: radial-gradient(1000px 600px at 20% -10%, rgba(0, 128, 128, .12), transparent 60%) var(--bg) !important;
+        color: var(--text) !important;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3 { letter-spacing: -0.01em; }
+
+    .flow-card {
+        background: linear-gradient(180deg, #0e1420, #0b0f14);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: var(--shadow);
+    }
+
+    .flow-card .icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        background: rgba(0, 128, 128, .12);
+        color: var(--text);
+        margin-bottom: 12px;
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .flow-card .icon img {
+        width: 24px;
+        height: 24px;
+        filter: invert(90%) sepia(2%) saturate(210%) hue-rotate(175deg) brightness(95%) contrast(86%);
+    }
+
+    .flow-card h3 {
+        margin: 0 0 6px;
+        font-weight: 600;
+    }
+
+    .flow-card p {
+        margin: 0 0 16px;
+        color: var(--muted);
+    }
+
+    .stButton > button {
+        background: var(--accent);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 600;
+    }
+
+    .stButton > button:hover { background: #0a8f8f; }
+    .stButton > button:active { transform: translateY(1px); }
+
+    hr { border-color: var(--border) !important; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 def main():
     """Main application entry point."""
     
@@ -64,56 +147,56 @@ def render_home():
     with col1:
         with st.container():
             st.markdown(
-                '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); '
-                'padding: 30px; border-radius: 12px; color: white; margin-bottom: 20px;">',
+                '<div class="flow-card">'
+                '<div class="icon"><img alt="Key icon" src="https://raw.githubusercontent.com/tailwindlabs/heroicons/master/optimized/24/outline/key.svg" /></div>'
+                '<h3>Rent Evaluation</h3>'
+                '<p>Find fair rental rates and market insights</p>'
+                '</div>',
                 unsafe_allow_html=True
             )
-            st.markdown("### 🔑 Rent Evaluation")
-            st.markdown("Find fair rental rates and market insights")
             if st.button("Evaluate Rental", key="rent_btn", use_container_width=True):
                 st.session_state.current_page = 'rent'
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
         
         with st.container():
             st.markdown(
-                '<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); '
-                'padding: 30px; border-radius: 12px; color: white; margin-bottom: 20px;">',
+                '<div class="flow-card">'
+                '<div class="icon"><img alt="Banknotes icon" src="https://raw.githubusercontent.com/tailwindlabs/heroicons/master/optimized/24/outline/banknotes.svg" /></div>'
+                '<h3>Sell Evaluation</h3>'
+                '<p>Get optimal pricing for your property</p>'
+                '</div>',
                 unsafe_allow_html=True
             )
-            st.markdown("### 💰 Sell Evaluation")
-            st.markdown("Get optimal pricing for your property")
             if st.button("Evaluate Selling", key="sell_btn", use_container_width=True):
                 st.session_state.current_page = 'sell'
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         with st.container():
             st.markdown(
-                '<div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); '
-                'padding: 30px; border-radius: 12px; color: white; margin-bottom: 20px;">',
+                '<div class="flow-card">'
+                '<div class="icon"><img alt="Home icon" src="https://raw.githubusercontent.com/tailwindlabs/heroicons/master/optimized/24/outline/home.svg" /></div>'
+                '<h3>Buy Evaluation</h3>'
+                '<p>Assess if a property is worth buying</p>'
+                '</div>',
                 unsafe_allow_html=True
             )
-            st.markdown("### 🏡 Buy Evaluation")
-            st.markdown("Assess if a property is worth buying")
             if st.button("Evaluate Purchase", key="buy_btn", use_container_width=True):
                 st.session_state.current_page = 'buy'
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
         
         with st.container():
             st.markdown(
-                '<div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); '
-                'padding: 30px; border-radius: 12px; color: white; margin-bottom: 20px;">',
+                '<div class="flow-card">'
+                '<div class="icon"><img alt="Chart bar icon" src="https://raw.githubusercontent.com/tailwindlabs/heroicons/master/optimized/24/outline/chart-bar.svg" /></div>'
+                '<h3>Investment Analysis</h3>'
+                '<p>Calculate ROI and investment metrics</p>'
+                '</div>',
                 unsafe_allow_html=True
             )
-            st.markdown("### 📈 Investment Analysis")
-            st.markdown("Calculate ROI and investment metrics")
             if st.button("Analyze Investment", key="invest_btn", use_container_width=True):
                 st.session_state.current_page = 'investment'
                 st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
     
     # Footer
     st.markdown("<br><br>", unsafe_allow_html=True)

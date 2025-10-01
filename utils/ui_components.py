@@ -21,9 +21,9 @@ def render_status_bar(value: str, labels: list | None = None, title: str = ""):
     
     # Colors for each segment
     colors = {
-        0: "#10b981",  # Green
-        1: "#f59e0b",  # Amber
-        2: "#ef4444"   # Red
+        0: "#34d399",  # Green 400
+        1: "#fbbf24",  # Amber 400
+        2: "#f87171"   # Red 400
     }
     
     if title:
@@ -42,8 +42,8 @@ def render_status_bar(value: str, labels: list | None = None, title: str = ""):
                 )
             else:
                 st.markdown(
-                    f'<div style="background-color: #e5e7eb; color: #6b7280; padding: 8px; '
-                    f'border-radius: 4px; text-align: center;">{label}</div>',
+                    f'<div style="background-color: #0f172a; color: #94a3b8; padding: 8px; '
+                    f'border-radius: 4px; text-align: center; border: 1px solid #1f2937;">{label}</div>',
                     unsafe_allow_html=True
                 )
 
@@ -58,8 +58,8 @@ def render_flags(red_flags: list, green_flags: list):
             st.markdown("**⚠️ Red Flags**")
             for flag in red_flags[:4]:
                 st.markdown(
-                    f'<div style="background-color: #fee2e2; color: #991b1b; padding: 6px 12px; '
-                    f'border-radius: 9999px; margin: 4px 0; display: inline-block; font-size: 0.875rem;">'
+                    f'<div style="background-color: #2b1d1d; color: #fca5a5; padding: 6px 12px; '
+                    f'border-radius: 9999px; margin: 4px 0; display: inline-block; font-size: 0.875rem; border: 1px solid #3f2d2d;">'
                     f'{flag}</div>',
                     unsafe_allow_html=True
                 )
@@ -69,8 +69,8 @@ def render_flags(red_flags: list, green_flags: list):
             st.markdown("**✅ Green Flags**")
             for flag in green_flags[:4]:
                 st.markdown(
-                    f'<div style="background-color: #d1fae5; color: #065f46; padding: 6px 12px; '
-                    f'border-radius: 9999px; margin: 4px 0; display: inline-block; font-size: 0.875rem;">'
+                    f'<div style="background-color: #0f2c2c; color: #34d399; padding: 6px 12px; '
+                    f'border-radius: 9999px; margin: 4px 0; display: inline-block; font-size: 0.875rem; border: 1px solid #184141;">'
                     f'{flag}</div>',
                     unsafe_allow_html=True
                 )
@@ -93,10 +93,10 @@ def render_property_status_and_pricing(facts):
         st.markdown("**Status**")
         if facts.status:
             status_colors = {
-                'active': '#10b981',
-                'pending': '#3b82f6',
-                'sold': '#6b7280',
-                'off_market': '#f59e0b'
+                'active': '#34d399',
+                'pending': '#60a5fa',
+                'sold': '#64748b',
+                'off_market': '#fbbf24'
             }
             status_labels = {
                 'active': '🟢 Active',
@@ -124,8 +124,8 @@ def render_property_status_and_pricing(facts):
                 st.caption(" | ".join(source_info))
         else:
             st.markdown(
-                '<div style="background-color: #e5e7eb; color: #6b7280; padding: 12px 20px; '
-                'border-radius: 8px; font-size: 1.1rem; text-align: center;">Status Unknown</div>',
+                '<div style="background-color: #0f172a; color: #94a3b8; padding: 12px 20px; '
+                'border-radius: 12px; font-size: 1.1rem; text-align: center; border: 1px solid #1f2937;">Status Unknown</div>',
                 unsafe_allow_html=True
             )
     
@@ -148,14 +148,14 @@ def render_property_status_and_pricing(facts):
         if price_box_items:
             price_text = "<br>".join(price_box_items)
             st.markdown(
-                f'<div style="background-color: #f3f4f6; padding: 12px 20px; border-radius: 8px;">'
+                f'<div style="background-color: #111827; padding: 12px 20px; border-radius: 12px; border: 1px solid #1f2937;">'
                 f'{price_text}</div>',
                 unsafe_allow_html=True
             )
         else:
             st.markdown(
-                '<div style="background-color: #f3f4f6; color: #6b7280; padding: 12px 20px; '
-                'border-radius: 8px;">Price information not available</div>',
+                '<div style="background-color: #0f172a; color: #94a3b8; padding: 12px 20px; '
+                'border-radius: 12px; border: 1px solid #1f2937;">Price information not available</div>',
                 unsafe_allow_html=True
             )
     
@@ -173,9 +173,9 @@ def render_property_header(facts, photo_url: str | None = None):
         else:
             # Placeholder
             st.markdown(
-                '<div style="background-color: #e5e7eb; height: 200px; display: flex; '
-                'align-items: center; justify-content: center; border-radius: 8px;">'
-                '<span style="color: #6b7280;">No Photo</span></div>',
+                '<div style="background-color: #0f172a; border: 1px solid #1f2937; height: 200px; display: flex; '
+                'align-items: center; justify-content: center; border-radius: 12px;">'
+                '<span style="color: #94a3b8;">No Photo</span></div>',
                 unsafe_allow_html=True
             )
     
@@ -185,15 +185,15 @@ def render_property_header(facts, photo_url: str | None = None):
         # Status badge
         if facts.status:
             status_colors = {
-                'active': '#10b981',
-                'sold': '#6b7280',
-                'off_market': '#f59e0b'
+                'active': '#34d399',
+                'sold': '#64748b',
+                'off_market': '#fbbf24'
             }
             status_label = facts.status.replace('_', ' ').title()
             color = status_colors.get(facts.status, '#6b7280')
             st.markdown(
-                f'<span style="background-color: {color}; color: white; padding: 4px 12px; '
-                f'border-radius: 12px; font-size: 0.875rem; font-weight: 600;">{status_label}</span>',
+                f'<span style="background-color: {color}; color: #0b0f14; padding: 4px 12px; '
+                f'border-radius: 12px; font-size: 0.875rem; font-weight: 700;">{status_label}</span>',
                 unsafe_allow_html=True
             )
             st.markdown("<br>", unsafe_allow_html=True)
