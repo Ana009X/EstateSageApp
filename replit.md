@@ -4,7 +4,28 @@
 
 A Streamlit-based real estate evaluation platform that provides AI-powered insights for property analysis across four distinct workflows: Rent, Buy, Sell, and Investment. The application offers dual input methods (URL scraping or manual address entry) and generates comprehensive evaluations with financial metrics, market analysis, and visual insights to support real estate decision-making.
 
-## Recent Changes (September 30, 2025)
+## Recent Changes
+
+### October 1, 2025 - Critical Price & Status Fix
+
+**Fixed: Always Show Latest Active Listing Price**
+- Implemented dual-endpoint strategy for RentCast API to prioritize current market data
+- Now queries `/listings/sale` endpoint FIRST to get active listing price and status
+- Falls back to `/properties` endpoint only for additional property details
+- Correctly shows current active prices (e.g., $3.2M) instead of old sold prices (e.g., $386k from 1994)
+
+**Enhanced Status Detection**
+- Added "Pending" status (🔵 blue badge) for properties under contract
+- Improved status mapping: Active, Pending, Sold, Off Market
+- Data source transparency with timestamp: "Source: RentCast | Updated: [time]"
+
+**Technical Implementation**
+- Priority 1: Check `/listings/sale?address=X&status=Active` for current listings
+- Priority 2: Query `/properties?address=X` for property details (beds, baths, sqft)
+- Merge both datasets, always prioritizing active listing data for price/status
+- Detailed logging for debugging price discrepancies
+
+### September 30, 2025
 
 ### RentCast API Integration
 - Integrated RentCast API for real estate data (140M+ U.S. properties)

@@ -15,6 +15,7 @@ RENTCAST_BASE_URL = "https://api.rentcast.io/v1"
 def get_property_by_address(address: str) -> Optional[PropertyFacts]:
     """
     Fetch property data from RentCast API by address.
+    First checks for active listings, then falls back to property records.
     
     Returns PropertyFacts with real data if API key exists, None otherwise.
     """
@@ -28,7 +29,22 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
             'Accept': 'application/json'
         }
         
-        # Get property records
+        # FIRST: Try to get current active listing data for sale properties
+        listing_response = requests.get(
+            f"{RENTCAST_BASE_URL}/listings/sale",
+            headers=headers,
+            params={'address': address, 'status': 'Active'},
+            timeout=10
+        )
+        
+        active_listing = None
+        if listing_response.status_code == 200:
+            listing_data = listing_response.json()
+            if listing_data and len(listing_data) > 0:
+                active_listing = listing_data[0]
+                logger.info(f"Found active listing for {address}: price=${active_listing.get('price')}, status={active_listing.get('status')}")
+        
+        # SECOND: Get property records for additional details
         response = requests.get(
             f"{RENTCAST_BASE_URL}/properties",
             headers=headers,
@@ -55,35 +71,51 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
             except:
                 pass
         
-        # Determine status and prices - using latest RentCast data
-        listing_status = prop.get('listingStatus', '').lower()
-        sold_price = prop.get('lastSalePrice')
-        current_price = prop.get('price')  # Current listing price if active
+        # PRIORITY 1: Use active listing data if available (most current)
+        if active_listing:
+            status = active_listing.get('status', '').lower()
+            if status == 'active':
+                status = 'active'
+            elif status in ['pending', 'contingent']:
+                status = 'pending'
+            else:
+                status = 'active'  # Default for listings endpoint
+            
+            current_price = active_listing.get('price')  # Current listing price
+            active_price = current_price
+            sold_price = prop.get('lastSalePrice')
+            list_price = current_price
+            days_on_market = active_listing.get('daysOnMarket')
+            
+            logger.info(f"Using ACTIVE LISTING data for {address}: status={status}, "
+                       f"current_price=${current_price}, days_on_market={days_on_market}")
         
-        # Enhanced status mapping for latest market data
-        # RentCast provides: Active, Pending, Sold, Contingent, Withdrawn, etc.
-        if listing_status in ['active', 'for sale', 'new']:
-            status = 'active'
-        elif listing_status in ['sold', 'closed']:
-            status = 'sold'
-        elif listing_status in ['pending', 'contingent', 'under contract']:
-            status = 'pending'
-        elif listing_status in ['withdrawn', 'cancelled', 'expired']:
-            status = 'off_market'
-        elif sold_price and last_sold_date:
-            # Has recent sale data
-            status = 'sold'
-        elif current_price:
-            # Has current price but unclear status
-            status = 'active'
+        # PRIORITY 2: Fall back to property records if no active listing
         else:
-            status = 'off_market'
-        
-        active_price = current_price if status in ['active', 'pending'] else None
-        list_price = active_price or current_price or sold_price
-        
-        logger.info(f"RentCast data for {address}: status={status}, listing_status={listing_status}, "
-                   f"active_price={active_price}, sold_price={sold_price}")
+            listing_status = prop.get('listingStatus', '').lower()
+            sold_price = prop.get('lastSalePrice')
+            current_price = prop.get('price')
+            days_on_market = prop.get('daysOnMarket')
+            
+            # Enhanced status mapping
+            if listing_status in ['active', 'for sale', 'new']:
+                status = 'active'
+            elif listing_status in ['sold', 'closed']:
+                status = 'sold'
+            elif listing_status in ['pending', 'contingent', 'under contract']:
+                status = 'pending'
+            elif listing_status in ['withdrawn', 'cancelled', 'expired']:
+                status = 'off_market'
+            elif sold_price and last_sold_date:
+                status = 'sold'
+            else:
+                status = 'off_market'
+            
+            active_price = current_price if status in ['active', 'pending'] else None
+            list_price = active_price or current_price or sold_price
+            
+            logger.info(f"Using PROPERTY RECORD data for {address}: status={status}, "
+                       f"listing_status={listing_status}, price=${list_price}")
         
         return PropertyFacts(
             address=prop.get('formattedAddress', address),
@@ -100,7 +132,7 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
             taxes_annual=prop.get('taxAssessedValue', 0) * 0.012 if prop.get('taxAssessedValue') else None,
             list_price=list_price,
             rent_estimate=prop.get('rentEstimate'),
-            days_on_market=prop.get('daysOnMarket'),
+            days_on_market=days_on_market,
             last_sold_price=sold_price,
             last_sold_date=last_sold_date,
             status=status,
@@ -116,7 +148,7 @@ def get_property_by_address(address: str) -> Optional[PropertyFacts]:
         return None
 
 
-def get_market_stats_by_location(lat: float, lon: float, city: str = None) -> Optional[MarketStats]:
+def get_market_stats_by_location(lat: float, lon: float, city: Optional[str] = None) -> Optional[MarketStats]:
     """
     Fetch market statistics from RentCast API by location.
     """
